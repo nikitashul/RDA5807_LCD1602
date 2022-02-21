@@ -37,8 +37,8 @@ unsigned int FM_STATION_FREQ = 10450; //104.50 Olimp
 #define   BACKLIGHT_PIN  7
 #define   CONTRAST       110
 
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2, BACKLIGHT_PIN, POSITIVE );
-
+//LiquidCrystal lcd(12, 11, 5, 4, 3, 2, BACKLIGHT_PIN, POSITIVE );
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2); //(rs, enable, d0, d1, d2, d3)
 
 // Creat a set of new characters
 byte smiley[8] = {
@@ -76,10 +76,10 @@ byte frownie[8] = {
 
 void setup() {
 
-  Serial.begin(9600);
-  while(!Serial);
+  //Serial.begin(9600);
+  //while(!Serial);
 
-  delay(500);
+  //delay(500);
   
 /*
   if (!checkI2C())
@@ -88,26 +88,38 @@ void setup() {
       while(1);
   }
 */
-
+  //--------------------------------------------------------
+  //--------------------------LCD---------------------------
+  lcd.begin(16,2);               // initialize the lcd 
+  lcd.createChar (0, smiley);    // load character to the LCD
+  lcd.createChar (1, armsUp);    // load character to the LCD
+  lcd.createChar (2, frownie);   // load character to the LCD
+  lcd.home ();                   // go home
+  lcd.print("Hello,  RDA5807");  
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(" FORUM - fm    ");      
+  //--------------------------------------------------------
+  delay(100);
+  //--------------------------------------------------------
+  //---------------------RDA5807----------------------------
   rx.setup();
   rx.setVolume(6);
+  rx.setFrequency(FM_STATION_FREQ);
   //rx.setVolume(8);  
-
-  
-  delay(500);
+  //--------------------------------------------------------
   //****
-  Serial.print("\nintervolna 102.9MHz");
-  rx.setFrequency(FM_STATION_FREQ); // The frequency you want to select in MHz multiplied by 100.
+  //Serial.print("\nintervolna 102.9MHz");
+  //rx.setFrequency(FM_STATION_FREQ); // The frequency you want to select in MHz multiplied by 100.
   
-  Serial.print("\nCurrent Channel: ");
-  Serial.print(rx.getRealChannel());
-  delay(500);
+  //Serial.print("\nCurrent Channel: ");
+  //Serial.print(rx.getRealChannel());
+  //delay(500);
 
-  Serial.print("\nReal Frequency.: ");
-  Serial.print(rx.getRealFrequency());
+  //Serial.print("\nReal Frequency.: ");
+  //Serial.print(rx.getRealFrequency());
   
-  Serial.print("\nRSSI: ");
-  Serial.print(rx.getRssi());
+  //Serial.print("\nRSSI: ");
+  //Serial.print(rx.getRssi());
 
 /*
   // Mute test
@@ -131,13 +143,20 @@ void setup() {
 */
 
 //Serial.print("\nIntervolna 102.9MHz");
-  rx.setFrequency(FM_STATION_FREQ);
+  //rx.setFrequency(FM_STATION_FREQ);
   
 }
 
 
 void loop() 
 {
+  // Do a little animation by writing to the same location
+  lcd.setCursor ( 14, 1 );
+  lcd.print (char(2));
+  delay (200);
+  lcd.setCursor ( 14, 1 );
+  lcd.print ( char(0));
+  delay (200);
 
 }
 
