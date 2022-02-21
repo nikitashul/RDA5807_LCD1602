@@ -30,8 +30,8 @@
 
 RDA5807 rx; 
 
-unsigned int FM_STATION_FREQ = 10450; //104.50 Olimp
-//unsigned int FM_STATION_FREQ = 10290; //102.90 Intervolna
+//unsigned int FM_STATION_FREQ = 10450; //104.50 Olimp
+unsigned int FM_STATION_FREQ = 10290; //102.90 Intervolna
 
 
 #define   CONTRAST_PIN   9
@@ -103,6 +103,12 @@ void showStatus_on_lcd()
   lcd.print("RSSI:           ");
   lcd.setCursor ( 0, 1 );        // go to the next line
   lcd.print(rx.getRssi());
+  delay(5000);
+  lcd.clear();
+  lcd.home ();                   // go to the home
+  lcd.print("RdsProgramType: ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rx.getRdsProgramType());
   delay(5000);
 
   //showFrequency();
@@ -249,9 +255,34 @@ void setup() {
 void loop() 
 {
   showRds();
+  delay(3000);
   showStatus_on_lcd();
-  showRDSStation();
-  showRDSMsg();
-  showRDSTime();
+  delay(3000);
+
+/*
+  if(rx.getRdsSync()){ //С этого момента RDS декодер синхронизирован. Данный факт отражается установкой флага RDSS регистра 0AH
+    Serial.println("С этого момента RDS декодер синхронизирован");
+    if(rx.getRdsReady()){
+      Serial.println("Информация получена");
+      Serial.print("rx.getRdsProgramType(): ");
+      Serial.println(rx.getRdsProgramType());
+      delay(3000);
+      Serial.print("rx.getRdsTime(): ");
+      Serial.println(rx.getRdsTime());
+      delay(3000);
+      Serial.print("rx.getRdsText(): ");
+      Serial.println(rx.getRdsText());
+      delay(3000);
+      Serial.print("rx.hasRdsInfo(): ");
+      Serial.println(rx.hasRdsInfo());
+      delay(3000);
+    }
+  }
+*/
 
 }
+  
+  //showRDSStation();
+  //showRDSMsg();
+  //showRDSTime();
+
