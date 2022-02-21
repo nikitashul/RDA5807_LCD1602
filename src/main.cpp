@@ -38,6 +38,11 @@ unsigned int FM_STATION_FREQ = 10450; //104.50 Olimp
 #define   BACKLIGHT_PIN  7
 #define   CONTRAST       110
 
+bool bSt = true;
+bool bRds = true;
+bool bShow = false;
+uint8_t seekDirection = 1; // 0 = Down; 1 = Up. This value is set by the last encoder direction.
+
 //LiquidCrystal lcd(12, 11, 5, 4, 3, 2, BACKLIGHT_PIN, POSITIVE );
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2); //(rs, enable, d0, d1, d2, d3)
 
@@ -75,6 +80,36 @@ byte frownie[8] = {
   0b10001
 };
 
+/*
+    Show some basic information on display
+*/
+void showStatus_on_lcd()
+{
+
+  lcd.clear();
+  lcd.home ();                   // go to the home
+  lcd.print("CHANELL:        ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rx.getRealChannel());
+  delay(5000);
+  lcd.clear();
+  lcd.home ();                   // go to the home
+  lcd.print("REAL_FREQ:      ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rx.getRealFrequency());
+  delay(5000);
+  lcd.clear();
+  lcd.home ();                   // go to the home
+  lcd.print("RSSI:           ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rx.getRssi());
+  delay(5000);
+
+  //showFrequency();
+  //showStereoMono();
+  //showRSSI();
+}
+
 /*********************************************************
    RDS
  *********************************************************/
@@ -99,6 +134,8 @@ void showRDSMsg()
   lcd.print("RDS_megage:     ");
   lcd.setCursor ( 0, 1 );        // go to the next line
   lcd.print(rdsMsg);
+  Serial.print("RDS_MEGAGE: ");
+  Serial.println(rdsMsg);
   delay(5000);
 }
 
@@ -114,6 +151,8 @@ void showRDSStation()
   lcd.print("stationName:    ");
   lcd.setCursor ( 0, 1 );        // go to the next line
   lcd.print(stationName);
+  Serial.print("RDS_STATION_NAME: ");
+  Serial.println(stationName);
   delay(5000);
 }
 
@@ -126,25 +165,63 @@ void showRDSTime()
   lcd.print("RDS_Time:       ");
   lcd.setCursor ( 0, 1 );        // go to the next line
   lcd.print(rdsTime);
+  Serial.print("RDS_TIME: ");
+  Serial.println(rdsTime);
   delay(5000);
 }
 
-void setup() {
+void clearRds() {
+  //lcd.clear();
+  bShow = false;
+}
 
-  //Serial.begin(9600);
-  //while(!Serial);
+void checkRDS()
+{
+  // check if RDS currently synchronized; the information are A, B, C and D blocks; and no errors
+  if ( rx.hasRdsInfo() ) {
+    rdsMsg = rx.getRdsText2A();
+    stationName = rx.getRdsText0A();
+    rdsTime = rx.getRdsTime();
+    if (rdsMsg != NULL)
+      showRDSMsg();
 
-  //delay(500);
-  
-/*
-  if (!checkI2C())
-  {
-      Serial.println("\nCheck your circuit!");
-      while(1);
+    if ((millis() - stationNameElapsed) > 1000)
+    {
+      if (stationName != NULL)
+        showRDSStation();
+      stationNameElapsed = millis();
+    }
+
+    if (rdsTime != NULL)
+      showRDSTime();
   }
-*/
+
+  if ( (millis() - clear_fifo) > 10000 ) {
+    rx.clearRdsFifo();
+    clear_fifo = millis();
+    
+  }
+}
+
+void showRds() {
+  char rdsStatus[10];
+
+  sprintf(rdsStatus, "RDS %s", (bRds) ? "ON" : "OFF");
+  Serial.print("RDS_STATUS: ");
+  Serial.println(rdsStatus);
+  checkRDS();
+}
+
+void setup() {
+  //--------------------------------------------------------
+  //-------------------------USART--------------------------
+  //--------------------------------------------------------
+  Serial.begin(9600);
+  //--------------------------------------------------------
+
   //--------------------------------------------------------
   //--------------------------LCD---------------------------
+  //--------------------------------------------------------
   lcd.begin(16,2);               // initialize the lcd 
   lcd.createChar (0, smiley);    // load character to the LCD
   lcd.createChar (1, armsUp);    // load character to the LCD
@@ -156,141 +233,25 @@ void setup() {
   //--------------------------------------------------------
   delay(100);
   //--------------------------------------------------------
-  //---------------------RDA5807----------------------------
+  //-------------------------RDA5807------------------------
+  //--------------------------------------------------------
   rx.setup();
   rx.setVolume(6);
+  rx.setMono(true);     // Force mono
+  // rx.setRBDS(true);  // set RDS and RBDS. See setRDS.
+  rx.setRDS(true);      // set RDS.
+  rx.setRdsFifo(true);
   rx.setFrequency(FM_STATION_FREQ);
-  rx.getRdsReady();
-  //rx.setVolume(8);  
   //--------------------------------------------------------
-
-  
-  //****
-  //Serial.print("\nintervolna 102.9MHz");
-  //rx.setFrequency(FM_STATION_FREQ); // The frequency you want to select in MHz multiplied by 100.
-  
-  //Serial.print("\nCurrent Channel: ");
-  //Serial.print(rx.getRealChannel());
-  //delay(500);
-
-  //Serial.print("\nReal Frequency.: ");
-  //Serial.print(rx.getRealFrequency());
-  
-  //Serial.print("\nRSSI: ");
-  //Serial.print(rx.getRssi());
-
-/*
-  // Mute test
-  Serial.print("\nAfter 5s device will mute during 3s");
-  delay(5000);
-  rx.setMute(true);
-  delay(3000);
-  rx.setMute(false);
-  Serial.print("\nMute test has finished.");
-*/
-
-/*
-  // Seek test
-  Serial.print("\nSeek station");
-  for (int i = 0; i < 10; i++ ) { 
-    rx.seek(1,0);
-    Serial.print("\nReal Frequency.: ");
-    Serial.print(rx.getRealFrequency());
-    delay(5000);
-  }
-*/
-
-//Serial.print("\nIntervolna 102.9MHz");
-  //rx.setFrequency(FM_STATION_FREQ);
   
 }
 
-
 void loop() 
 {
-  // Do a little animation by writing to the same location
-  /*
-  lcd.setCursor ( 15, 1 );
-  lcd.print (char(2));
-  delay (300);
-  lcd.setCursor ( 15, 1 );
-  lcd.print ( char(0));
-  delay (300);
-  */
-  lcd.clear();
-  lcd.home ();                   // go to the home
-  lcd.print("CHANELL:        ");
-  lcd.setCursor ( 0, 1 );        // go to the next line
-  lcd.print(rx.getRealChannel());
-  delay(5000);
-  lcd.clear();
-  lcd.home ();                    // go to the next line
-  lcd.print("REAL_FREQ:      ");
-  lcd.setCursor ( 0, 1 );        // go to the next line
-  lcd.print(rx.getRealFrequency());
-  delay(5000);
-  lcd.clear();
-  lcd.home ();                  // go to the next line
-  lcd.print("RSSI:           ");
-  lcd.setCursor ( 0, 1 );        // go to the next line
-  lcd.print(rx.getRssi());
-  delay(5000);
-
-
+  showRds();
+  showStatus_on_lcd();
   showRDSStation();
   showRDSMsg();
   showRDSTime();
 
-  //Serial.print("\nCurrent Channel: ");
-  //Serial.print(rx.getRealChannel());
-  //delay(500);
-
-  //Serial.print("\nReal Frequency.: ");
-  //Serial.print(rx.getRealFrequency());
-  
-  //Serial.print("\nRSSI: ");
-  //Serial.print(rx.getRssi());
-
 }
-
-
-/**
- * Returns true if device found
- */
-
-/*
-bool checkI2C() {
-  Wire.begin();
-  byte error, address;
-  int nDevices;
-  Serial.println("I2C bus Scanning...");
-  nDevices = 0;
-  for(address = 1; address < 127; address++ ) {
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-    if (error == 0) {
-      Serial.print("\nI2C device found at address 0x");
-      if (address<16) {
-        Serial.print("0");
-      }
-      Serial.println(address,HEX);
-      nDevices++;
-    }
-    else if (error==4) {
-      Serial.print("\nUnknow error at address 0x");
-      if (address<16) {
-        Serial.print("0");
-      }
-      Serial.println(address,HEX);
-    }    
-  }
-  if (nDevices == 0) {
-    Serial.println("No I2C devices found\n");
-    return false;
-  }
-  else {
-    Serial.println("done\n");
-    return true;
-  }
-}
-*/
