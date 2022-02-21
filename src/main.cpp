@@ -1,12 +1,13 @@
 /*
     | Device name               | Device Pin / Description  |  Arduino Pin  |
     | ----------------          | --------------------      | ------------  |
-    |    Display LCD1602        |                           |               |
-    |                           | RST (RESET)               |      8        |
-    |                           | RS  or DC                 |      9        |
-    |                           | CS  or SS                 |     10        |
-    |                           | SDI                       |     11        |
-    |                           | CLK                       |     13        |
+    |     Display LCD1602       |                           |               |
+    |                           | RST (RESET)               |      12       |
+    |                           | EN  (Enable)              |      11       |
+    |                           | D0                        |      5        |
+    |                           | D1                        |      4        |
+    |                           | D2                        |      3        |
+    |                           | D3                        |      2        |
     |     RDA5807               |                           |               |
     |                           | SDIO (pin 8)              |     A4        |
     |                           | SCLK (pin 7)              |     A5        |
@@ -16,7 +17,7 @@
     |                           | Stereo/Mono               |               |
     |                           | RDS ON/off                |               |
     |                           | SEEK (encoder button)     |               |
-    |    Encoder                |                           |               |
+    |     Encoder               |                           |               |
     |                           | A                         |               |
     |                           | B                         |               |
 */
@@ -74,6 +75,60 @@ byte frownie[8] = {
   0b10001
 };
 
+/*********************************************************
+   RDS
+ *********************************************************/
+char *rdsMsg;
+char *stationName;
+char *rdsTime;
+char bufferStatioName[16];
+char bufferRdsMsg[40];
+char bufferRdsTime[20];
+long stationNameElapsed = millis();
+long polling_rds = millis();
+long clear_fifo = millis();
+
+void showRDSMsg()
+{
+  
+  rdsMsg[22] = bufferRdsMsg[22] = '\0';   // Truncate the message to fit on display.  You can try scrolling
+  if (strcmp(bufferRdsMsg, rdsMsg) == 0)
+    return;
+  lcd.clear();
+  lcd.home ();                   // go to the home
+  lcd.print("RDS_megage:     ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rdsMsg);
+  delay(5000);
+}
+
+/**
+   TODO: process RDS Dynamic PS or Scrolling PS
+*/
+void showRDSStation()
+{
+  if (strncmp(bufferStatioName, stationName, 3) == 0)
+    return;
+  lcd.clear();
+  lcd.home ();                   // go to the home
+  lcd.print("stationName:    ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(stationName);
+  delay(5000);
+}
+
+void showRDSTime()
+{
+  if (strcmp(bufferRdsTime, rdsTime) == 0)
+    return;
+  lcd.clear();
+  lcd.home ();                   // go to the home
+  lcd.print("RDS_Time:       ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rdsTime);
+  delay(5000);
+}
+
 void setup() {
 
   //Serial.begin(9600);
@@ -95,9 +150,9 @@ void setup() {
   lcd.createChar (1, armsUp);    // load character to the LCD
   lcd.createChar (2, frownie);   // load character to the LCD
   lcd.home ();                   // go home
-  lcd.print("Hello,  RDA5807");  
+  lcd.print("Hello,   RDA5807");  
   lcd.setCursor ( 0, 1 );        // go to the next line
-  lcd.print(" FORUM - fm    ");      
+  lcd.print(" FORUM - fm     ");      
   //--------------------------------------------------------
   delay(100);
   //--------------------------------------------------------
@@ -105,8 +160,11 @@ void setup() {
   rx.setup();
   rx.setVolume(6);
   rx.setFrequency(FM_STATION_FREQ);
+  rx.getRdsReady();
   //rx.setVolume(8);  
   //--------------------------------------------------------
+
+  
   //****
   //Serial.print("\nintervolna 102.9MHz");
   //rx.setFrequency(FM_STATION_FREQ); // The frequency you want to select in MHz multiplied by 100.
@@ -151,12 +209,47 @@ void setup() {
 void loop() 
 {
   // Do a little animation by writing to the same location
-  lcd.setCursor ( 14, 1 );
+  /*
+  lcd.setCursor ( 15, 1 );
   lcd.print (char(2));
-  delay (200);
-  lcd.setCursor ( 14, 1 );
+  delay (300);
+  lcd.setCursor ( 15, 1 );
   lcd.print ( char(0));
-  delay (200);
+  delay (300);
+  */
+  lcd.clear();
+  lcd.home ();                   // go to the home
+  lcd.print("CHANELL:        ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rx.getRealChannel());
+  delay(5000);
+  lcd.clear();
+  lcd.home ();                    // go to the next line
+  lcd.print("REAL_FREQ:      ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rx.getRealFrequency());
+  delay(5000);
+  lcd.clear();
+  lcd.home ();                  // go to the next line
+  lcd.print("RSSI:           ");
+  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.print(rx.getRssi());
+  delay(5000);
+
+
+  showRDSStation();
+  showRDSMsg();
+  showRDSTime();
+
+  //Serial.print("\nCurrent Channel: ");
+  //Serial.print(rx.getRealChannel());
+  //delay(500);
+
+  //Serial.print("\nReal Frequency.: ");
+  //Serial.print(rx.getRealFrequency());
+  
+  //Serial.print("\nRSSI: ");
+  //Serial.print(rx.getRssi());
 
 }
 
