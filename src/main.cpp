@@ -22,10 +22,9 @@
     |                           | B                         |               |
 */
 
+#include <Wire.h>
 #include <Arduino.h>
 #include <RDA5807.h>
-//bool checkI2C();
-#include <Wire.h>
 #include <LiquidCrystal.h>
 
 RDA5807 rx; 
@@ -38,10 +37,24 @@ unsigned int FM_STATION_FREQ = 10290; //102.90 Intervolna
 #define   BACKLIGHT_PIN  7
 #define   CONTRAST       110
 
+/*
 bool bSt = true;
 bool bRds = true;
 bool bShow = false;
 uint8_t seekDirection = 1; // 0 = Down; 1 = Up. This value is set by the last encoder direction.
+*/
+
+//-------------------RDS-------------------
+#define DEBUG 0
+char buffer[30];
+unsigned int RDS[4];
+char seg_RDS[8];
+char seg_RDS1[64];
+char indexRDS1;
+
+char hora,minuto,grupo,versio;
+unsigned long julian;
+//-----------------------------------------
 
 //LiquidCrystal lcd(12, 11, 5, 4, 3, 2, BACKLIGHT_PIN, POSITIVE );
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2); //(rs, enable, d0, d1, d2, d3)
@@ -116,107 +129,105 @@ void showStatus_on_lcd()
   //showRSSI();
 }
 
-/*********************************************************
-   RDS
- *********************************************************/
-char *rdsMsg;
-char *stationName;
-char *rdsTime;
-char bufferStatioName[16];
-char bufferRdsMsg[40];
-char bufferRdsTime[20];
-long stationNameElapsed = millis();
-long polling_rds = millis();
-long clear_fifo = millis();
-
-void showRDSMsg()
+// Show current frequency
+void showStatus()
 {
-  
-  rdsMsg[22] = bufferRdsMsg[22] = '\0';   // Truncate the message to fit on display.  You can try scrolling
-  if (strcmp(bufferRdsMsg, rdsMsg) == 0)
-    return;
-  lcd.clear();
-  lcd.home ();                   // go to the home
-  lcd.print("RDS_megage:     ");
-  lcd.setCursor ( 0, 1 );        // go to the next line
-  lcd.print(rdsMsg);
-  Serial.print("RDS_MEGAGE: ");
-  Serial.println(rdsMsg);
-  delay(5000);
+  char aux[80];
+  sprintf(aux,"\nYou are tuned on %u MHz | RSSI: %3.3u dbUv | Vol: %2.2u | %s ",rx.getFrequency(), rx.getRssi(), rx.getVolume(), (rx.isStereo()) ? "Yes" : "No" );
+  Serial.println(aux);
 }
 
-/**
-   TODO: process RDS Dynamic PS or Scrolling PS
-*/
-void showRDSStation()
+//READ RDS  Direccion 0x11 for random access
+void ReadW()
 {
-  if (strncmp(bufferStatioName, stationName, 3) == 0)
-    return;
-  lcd.clear();
-  lcd.home ();                   // go to the home
-  lcd.print("stationName:    ");
-  lcd.setCursor ( 0, 1 );        // go to the next line
-  lcd.print(stationName);
-  Serial.print("RDS_STATION_NAME: ");
-  Serial.println(stationName);
-  delay(5000);
-}
+   Wire.beginTransmission(0x11);            // Device 0x11 for random access
+   Wire.write(0x0C);                        // Start at Register 0x0C
+   Wire.endTransmission(0);                 // restart condition
+   Wire.requestFrom(0x11,8, 1);             // Retransmit device address with READ, followed by 8 bytes
+   for (int i=0; i<4; i++) {RDS[i]=256*Wire.read()+Wire.read();}        // Read Data into Array of Unsigned Ints
+   Wire.endTransmission();                  
+} 
 
-void showRDSTime()
-{
-  if (strcmp(bufferRdsTime, rdsTime) == 0)
-    return;
-  lcd.clear();
-  lcd.home ();                   // go to the home
-  lcd.print("RDS_Time:       ");
-  lcd.setCursor ( 0, 1 );        // go to the next line
-  lcd.print(rdsTime);
-  Serial.print("RDS_TIME: ");
-  Serial.println(rdsTime);
-  delay(5000);
-}
-
-void clearRds() {
-  //lcd.clear();
-  bShow = false;
-}
-
-void checkRDS()
-{
-  // check if RDS currently synchronized; the information are A, B, C and D blocks; and no errors
-  if ( rx.hasRdsInfo() ) {
-    rdsMsg = rx.getRdsText2A();
-    stationName = rx.getRdsText0A();
-    rdsTime = rx.getRdsTime();
-    if (rdsMsg != NULL)
-      showRDSMsg();
-
-    if ((millis() - stationNameElapsed) > 1000)
+void get_RDS()
+{    
+  int i;
+  ReadW();      
+  grupo=(RDS[1]>>12)&0xf;
+      if(RDS[1]&0x0800) versio=1; else versio=0;  //Version A=0  Version B=1   
+      if(versio==0)
+      {
+       #if DEBUG             
+       sprintf(buffer,"Version=%d  Grupo=%02d ",versio,grupo); Serial.print(buffer);
+    //    Serial.print(" 0->");Serial.print(RDS[0],HEX);Serial.print(" 1->");Serial.print(RDS[1],HEX);Serial.print(" 2->");Serial.print(RDS[2],HEX);Serial.print(" 3->");Serial.println(RDS[03],HEX);
+    //    Serial.print(" 0->");Serial.print(RDS[0],BIN);Serial.print(" 1->");Serial.print(RDS[1],BIN);Serial.print(" 2->");Serial.print(RDS[2],BIN);Serial.print(" 3->");Serial.println(RDS[03],BIN);
+    #endif 
+    switch(grupo)
     {
-      if (stationName != NULL)
-        showRDSStation();
-      stationNameElapsed = millis();
-    }
-
-    if (rdsTime != NULL)
-      showRDSTime();
-  }
-
-  if ( (millis() - clear_fifo) > 10000 ) {
-    rx.clearRdsFifo();
-    clear_fifo = millis();
+     case 0:              
+      #if DEBUG 
+      Serial.print("_RDS0__");     
+      #endif
+      i=(RDS[1] & 3) <<1;
+      seg_RDS[i]=(RDS[3]>>8);       
+      seg_RDS[i+1]=(RDS[3]&0xFF);
+      //gotoXY(10,4);
+      for (i=0;i<8;i++)
+      {
+        #if DEBUG 
+        Serial.write(seg_RDS[i]);   
+        #endif
+        
+      }  
+      //Serial.print("FrecuAlt1-");Serial.println((RDS[2]>>8)+875);
+      //Serial.print("FrecuAlt2-"); Serial.println(RDS[2]&0xFF+875);      
+      
+      #if DEBUG                 
+      Serial.println("---");
+      #endif
+      break;
+     case 2:
+      i=(RDS[1] & 15) <<2;              
+      seg_RDS1[i]=(RDS[2]>>8);       
+      seg_RDS1[i+1]=(RDS[2]&0xFF);
+      seg_RDS1[i+2]=(RDS[3]>>8);       
+      seg_RDS1[i+3]=(RDS[3]&0xFF);
+      #if DEBUG 
+      Serial.println("_RADIOTEXTO_");
+              //Serial.print(i);Serial.print("   ");Serial.println(RDS[1] & 15);
+              //Serial.write(RDS[2]>>8); Serial.write (RDS[2]&0xFF);Serial.write(RDS[3]>>8);Serial.write(RDS[3]&0xFF);Serial.write("_");
+              for (i=0;i<32;i++)  Serial.write(seg_RDS1[i]);                                    
+              Serial.println("-TXT-");
+              #endif      
+              break;
+              case 4:             
+              i=RDS[3]& 0x003f;
+              minuto=(RDS[3]>>6)& 0x003f;
+              hora=(RDS[3]>>12)& 0x000f;
+              if(RDS[2]&1) hora+=16;
+              hora+=i;        
+              //z=RDS[2]>>1;
+              julian = RDS[2]>>1;
+              
+              if(RDS[1]&1) julian+=32768;
+              if(RDS[1]&2) julian+=65536;
+              #if DEBUG 
+              Serial.print("_DATE_");
+              Serial.print(" Juliano=");Serial.print(julian);
+              //sprintf(buffer," %02d:%02d ",hora,minuto); gotoXY(38,2);  LcdString(buffer); 
+              Serial.println(buffer); 
+              #endif            
+              break;
+              default:
+              #if DEBUG 
+              Serial.println("__"); 
+              #endif    
+              ;        
+            }                        
+    }                   
+}    
+      
     
-  }
-}
-
-void showRds() {
-  char rdsStatus[10];
-
-  sprintf(rdsStatus, "RDS %s", (bRds) ? "ON" : "OFF");
-  Serial.print("RDS_STATUS: ");
-  Serial.println(rdsStatus);
-  checkRDS();
-}
+   
 
 void setup() {
   //--------------------------------------------------------
@@ -228,13 +239,13 @@ void setup() {
   //--------------------------------------------------------
   //--------------------------LCD---------------------------
   //--------------------------------------------------------
-  lcd.begin(16,2);               // initialize the lcd 
-  lcd.createChar (0, smiley);    // load character to the LCD
-  lcd.createChar (1, armsUp);    // load character to the LCD
-  lcd.createChar (2, frownie);   // load character to the LCD
-  lcd.home ();                   // go home
+  lcd.begin(16,2);                  // initialize the lcd 
+  lcd.createChar (0, smiley);       // load character to the LCD
+  lcd.createChar (1, armsUp);       // load character to the LCD
+  lcd.createChar (2, frownie);      // load character to the LCD
+  lcd.home ();                      // go home
   lcd.print("Hello,   RDA5807");  
-  lcd.setCursor ( 0, 1 );        // go to the next line
+  lcd.setCursor ( 0, 1 );           // go to the next line
   lcd.print(" FORUM - fm     ");      
   //--------------------------------------------------------
   delay(100);
@@ -243,21 +254,46 @@ void setup() {
   //--------------------------------------------------------
   rx.setup();
   rx.setVolume(6);
-  rx.setMono(true);     // Force mono
-  // rx.setRBDS(true);  // set RDS and RBDS. See setRDS.
-  rx.setRDS(true);      // set RDS.
+  rx.setBass(true);                 // Sets Bass Boost (value	FALSE = Disable; TRUE = Enable)
+  rx.setMono(true);                 // Force mono (value	TRUE = Mono; FALSE force stereo)
+  // rx.setRBDS(true);              // set RDS and RBDS. See setRDS.
+  rx.setRDS(true);                  // set RDS.
   rx.setRdsFifo(true);
-  rx.setFrequency(FM_STATION_FREQ);
+  rx.setFrequency(FM_STATION_FREQ); // set STATION Freq.
   //--------------------------------------------------------
   
 }
 
 void loop() 
 {
-  showRds();
-  delay(3000);
-  showStatus_on_lcd();
-  delay(3000);
+  delay(1000);
+  //showStatus_on_lcd();
+  showStatus();
+  delay(1000);
+  Serial.println("---------------RDS -- get_RDS() in-------------------");
+  //get_RDS();
+  ReadW();
+  Serial.print("\n");
+  for (unsigned char i=0; i<64; i++)
+  {
+    
+    Serial.print(RDS[i]);
+  }
+  Serial.print("\n");
+  Serial.println("---------------RDS -- get_RDS() out------------------");
+
+  Serial.println("---------------RDS -- TIME in-------------------");
+  Serial.print("\n");
+  Serial.println(RDS[0], BIN);
+  Serial.println(RDS[1], BIN);
+  Serial.println(RDS[2], BIN);
+  Serial.println(RDS[3], BIN);
+  Serial.println(RDS[4], BIN);
+  Serial.println(RDS[5], BIN);
+  Serial.println(RDS[6], BIN);
+  Serial.println(RDS[7], BIN);
+  Serial.print("\n");
+  Serial.println("---------------RDS -- TIME out-------------------");
 
 /*
   if(rx.getRdsSync()){ //С этого момента RDS декодер синхронизирован. Данный факт отражается установкой флага RDSS регистра 0AH
@@ -281,8 +317,3 @@ void loop()
 */
 
 }
-  
-  //showRDSStation();
-  //showRDSMsg();
-  //showRDSTime();
-
