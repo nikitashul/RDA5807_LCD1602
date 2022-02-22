@@ -277,7 +277,7 @@ void loop()
   for (unsigned char i=0; i<64; i++)
   {
     
-    Serial.print(RDS[i]);
+    Serial.print(RDS[i], HEX);
   }
   Serial.print("\n");
   Serial.println("---------------RDS -- get_RDS() out------------------");
