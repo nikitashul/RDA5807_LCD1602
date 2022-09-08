@@ -297,6 +297,7 @@ void showStatus_on_lcd()
     Serial.println(rx.getRealFrequency());
     Serial.print("RSSI: ");
     Serial.println(rx.getRssi());
+    delay(1000);
     
   }
   
