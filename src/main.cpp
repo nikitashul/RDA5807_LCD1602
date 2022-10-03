@@ -173,7 +173,6 @@ void setup() {
   rx.setVolume(4);
   rx.setBass(true);                 // Sets Bass Boost (value	FALSE = Disable; TRUE = Enable)
   rx.setMono(true);                 // Force mono (value	TRUE = Mono; FALSE force stereo)
-  // rx.setRBDS(true);              // set RDS and RBDS. See setRDS.
   rx.setRDS(false);                 // set RDS.
   rx.setRBDS(false);                // set the RBDS operation.
   rx.setRdsFifo(false);
@@ -210,7 +209,7 @@ void TIMER_TIC()
   if (millis() - timer_2 > PERIOD_2) {
     timer_2 = millis();
     // выполняем блок №2 каждые PERIOD_2 миллисекунд
-    //Обработка нажатия кнопок
+    // Обработка нажатия кнопок
     BUTTON();
     
   }
