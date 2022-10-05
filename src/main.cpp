@@ -117,14 +117,14 @@ byte frownie[8] = {
 #define PERIOD_1 300    // период //Вывод данных на LCD1602
 #define PERIOD_2 15     // период //Период опроса кнопок
 
-unsigned long timer_1, timer_2; //Переменные для реализации таймеров
+unsigned long timer_1, timer_2;                               //Переменные для реализации таймеров
 uint8_t KEY_1_count = 0, KEY_2_count = 0, KEY_SET_count = 0;  //Счетчики для антидребезга
-//bool KEY_1_flag = 0, KEY_2_flag = 0, KEY_SET_flag = 0;  //Убрать неиспользуется
+//bool KEY_1_flag = 0, KEY_2_flag = 0, KEY_SET_flag = 0;      //Убрать неиспользуется
 
 void TIMER_TIC();         //Функция обрабатывает таймеры для выполнения задач.
 void showStatus_on_lcd(); //Функция обрабатывает вывод информации на LCD1602
 void BUTTON();            //Функция обрабатывает нажатия кнопок
-bool ANTIBOUNCE(uint8_t KEY, uint8_t *COUNT);        //Функция антидребезг
+bool ANTIBOUNCE(uint8_t KEY, uint8_t &COUNT);        //Функция антидребезг
 
 void setup() {
   //Очистка памяти при первом программировании
@@ -212,23 +212,38 @@ void TIMER_TIC()
     // выполняем блок №2 каждые PERIOD_2 миллисекунд
     // Обработка нажатия кнопок
     BUTTON();
-    if(ANTIBOUNCE(KEY_1, KEY_1_count)==true)
-    {
-      digitalWrite(13, HIGH);
-      //delay(200);
-    }
-    else{
-      digitalWrite(13, LOW);
-    }
-    
-    
   }
 }
 
 //Функция обрабатывает нажатия кнопок
-void BUTTON(){
+void BUTTON()
+{
+  //Serial.print("KEY_1_count: ");
+  //Serial.println(KEY_1_count);
+  if(ANTIBOUNCE(KEY_1, KEY_1_count))      //Функция возврвщает true если кнопка нажата
+      {
+        rx.setFrequency(PROGRAMMS[++SET_STATION]);   // set STATION Freq.
+      }
 
-  
+  if(ANTIBOUNCE(KEY_2, KEY_2_count)==true)      //Функция возврвщает true если кнопка нажата
+      {
+        rx.setFrequency(PROGRAMMS[--SET_STATION]);   // set STATION Freq.
+      }
+  if(ANTIBOUNCE(KEY_SET, KEY_SET_count)==true)  //Функция возврвщает true если кнопка нажата
+    {
+      EEPROM.update(0, SET_STATION);
+      lcd.clear();
+      lcd.home ();                   // go to the home
+      lcd.print("EEPROM SET:        ");
+      lcd.setCursor ( 0, 1 );        // go to the next line
+      lcd.print(SET_STATION);
+      Serial.println("EEPROM SET: ");
+      Serial.print(SET_STATION);
+      //delay(2000);
+    }
+    
+
+  /*
   //---------------KEY_1---------------------
   //-------------Антидребезг-----------------
   //Проверка, если нажата кнопка и не прошло 10 периодов то инкрементируем (10*10мсек)
@@ -289,19 +304,27 @@ void BUTTON(){
   {
     KEY_SET_count--;
   }
-  
+  */
 }
 
 //Функция антидребезг
-bool ANTIBOUNCE(uint8_t KEY, uint8_t *COUNT)      
+bool ANTIBOUNCE(uint8_t KEY, uint8_t &COUNT)      
 {
   //-------------Антидребезг-----------------
   //Проверка, если нажата кнопка и не прошло 10 периодов то инкрементируем (10*10мсек)
+  //Serial.println("ANTIBOUNCE(KEY_1, KEY_1_count)");
   bool x = 0;
-  if(digitalRead(KEY) == LOW && *COUNT<10){
-    *COUNT ++; 
-    if(*COUNT >= 10)
+  /*
+  Serial.println(KEY);
+  Serial.println(COUNT);
+  delay(1000);
+  */
+  if(digitalRead(KEY) == LOW && COUNT<10){
+    //Serial.println(COUNT);
+    COUNT ++;
+    if(COUNT >= 10)
     {
+      //CLIC BUTTON
       x = true;
     }
     else{
@@ -310,9 +333,9 @@ bool ANTIBOUNCE(uint8_t KEY, uint8_t *COUNT)
     
   }
   //Сброс состояния кнопки
-  if(digitalRead(KEY) == HIGH && *COUNT > 0)
+  if(digitalRead(KEY) == HIGH && COUNT > 0)
   {
-    *COUNT --;
+    COUNT --;
   
   }
   //Возвращаю значение
