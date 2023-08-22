@@ -392,6 +392,8 @@ void showStatus_on_lcd()
     Serial.println(rx.getRealFrequency());
     Serial.print("RSSI: ");
     Serial.println(rx.getRssi());
+    Serial.print("LABEL: ");
+    Serial.println(PROGRAMMS_LABEL[SET_STATION]);
     //Serial.println(ANTIBOUNCE(KEY_1, KEY_1_count));
     //delay(1000);
     
