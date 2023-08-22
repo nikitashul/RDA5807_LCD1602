@@ -53,17 +53,24 @@
 RDA5807 rx; 
 
 uint16_t PROGRAMMS[] = {  9600,  // 96.00 ENERGY
+                          9910,  // 99.10 Avtoradio
                           10000, //100.00 Радио 100
                           10040, //100.40 Kontinental
                           10080, //100.80 Bisness
+                          10120, //101.20 Yumor FM
                           10160, //101.60 Europa+
                           10200, //102.00 Novoe
                           10240, //102.40 Studio
                           10290, //102.90 Intervolna
                           10350, //103.50 Nawe
+                          10450, //104.10 Russkoe
                           10450, //104.50 Olimp
                           10490, //104.90 L-radio
-                          10680  //106.80 Iskatel
+                          10540, //7 na 7 xolmax
+                          10630, //Dorognoe
+                          10680, //106.80 Iskatel
+                          10730, //DFM
+                          10780  //Comedy
                         
                         };
 
@@ -184,7 +191,7 @@ void setup() {
     Serial.print("EEPROM.read(0);     ---- i= ");
     Serial.println(SET_STATION);
 
-    Serial.println("rx.setup(); RDA5807 ------ OK");
+    Serial.println("RDA5807.setup(); RDA5807 ------ OK");
     delay(1000);
   }
   //--------------------------------------------------------
@@ -311,7 +318,7 @@ void BUTTON()
 bool ANTIBOUNCE(uint8_t KEY, uint8_t &COUNT)      
 {
   //-------------Антидребезг-----------------
-  //Проверка, если нажата кнопка и не прошло 10 периодов то инкрементируем (10*10мсек)
+  //Проверка, если нажата кнопка и не прошло 10 периодов то инкрементируем (10*15мсек)
   //Serial.println("ANTIBOUNCE(KEY_1, KEY_1_count)");
   bool x = 0;
   /*
