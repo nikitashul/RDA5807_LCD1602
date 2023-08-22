@@ -74,6 +74,28 @@ uint16_t PROGRAMMS[] = {  9600,  // 96.00 ENERGY
                         
                         };
 
+String PROGRAMMS_LABEL[] = {  "ENERGY          ",
+                              "Avtoradio       ",
+                              "Радио 100       ",
+                              "Kontinental     ",
+                              "Bisness FM      ",
+                              "Yumor FM        ",
+                              "Europa+         ",
+                              "Novoe           ",
+                              "Studio          ",
+                              "Intervolna      ",
+                              "Наше радио      ",
+                              "Русское радио   ",
+                              "Olimp           ",
+                              "L-radio         ",
+                              "7 na 7 xolmax   ",
+                              "Dorognoe        ",
+                              "Iskatel         ",
+                              "DFM             ",
+                              "Comedy          "
+                        
+                        };
+
 unsigned char SET_STATION = EEPROM.read(0); //Считываем какую станцию сохранили.
 
 //LiquidCrystal lcd(12, 11, 5, 4, 3, 2, BACKLIGHT_PIN, POSITIVE );
@@ -359,8 +381,10 @@ void showStatus_on_lcd()
   lcd.print("FREQ: ");
   lcd.print(rx.getRealFrequency());
   lcd.setCursor ( 0, 1 );        // go to the next line
-  lcd.print("RSSI: ");
-  lcd.print(rx.getRssi());
+  //lcd.print("RSSI: ");
+  //lcd.print(rx.getRssi());
+  lcd.print(PROGRAMMS_LABEL[SET_STATION]);
+  
   if (DEBUG_INIT){
     Serial.print("CHANELL: ");
     Serial.println(rx.getRealChannel());
