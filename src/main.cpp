@@ -37,7 +37,7 @@
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
 
-#define DEBUG_INIT 1 //Debug on/off
+#define DEBUG_INIT 0 //Debug on/off
 
 #define RS 12
 #define EN 11
