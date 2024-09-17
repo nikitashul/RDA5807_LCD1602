@@ -52,47 +52,70 @@
 
 RDA5807 rx; 
 
-uint16_t PROGRAMMS[] = {  9600,  // 96.00 ENERGY
-                          9910,  // 99.10 Avtoradio
-                          10000, //100.00 Радио 100
-                          10040, //100.40 Kontinental
-                          10080, //100.80 Bisness
-                          10120, //101.20 Yumor FM
-                          10160, //101.60 Europa+
-                          10200, //102.00 Novoe
-                          10240, //102.40 Studio
-                          10290, //102.90 Intervolna
-                          10350, //103.50 Nawe
-                          10450, //104.10 Russkoe
-                          10450, //104.50 Olimp
-                          10490, //104.90 L-radio
-                          10540, //7 na 7 xolmax
-                          10630, //Dorognoe
-                          10680, //106.80 Iskatel
-                          10730, //DFM
-                          10780  //Comedy
+uint16_t PROGRAMMS[] = {  
+  8790,  // 87.90 Monte Carlo
+  9260,  // Vesti FM
+  9300,  // Radio Gordost
+  9360,  // Mayak
+  9400,  // Mir
+  9460,  // Love Radio
+  9530,  // Koms Pravda
+  9600,  // 96.00 ENERGY
+  9640,  // Retro FM
+  9780,  // Russia
+  9870,  // Dacha
+  9910,  // Avtoradio
+  10000, //100.00 Радио 100
+  10040, //100.4 Kontinental
+  10080, //100.80 Bisness
+  10120, //101.20 Yumor FM
+  10160, //101.60 Europa+
+  10200, //102.00 Novoe
+  10240, //102.4 Studio 21
+  10290, //102.9 Intervolna
+  10350, //103.50 Nawe
+  10410, //104.10 Russkoe
+  10450, //104.50 Olimp
+  10490, //104.90 L-radio
+  10540, //7 na 7 xolmax
+  10590, //Shanson
+  10630, //Dorognoe
+  10680, //Vania
+  10730, //DFM
+  10780  //Comedy                        
                         
                         };
 
-String PROGRAMMS_LABEL[] = {  "ENERGY          ",
+char* PROGRAMMS_LABEL[] = {   "Monte Carlo     ",
+                              "Vesti FM        ",
+                              "Radio Gordost   ",
+                              "Mayak           ",
+                              "Mir             ",
+                              "Love Radio      ",
+                              "Koms Pravda     ",
+                              "ENERGY          ",
+                              "Retro FM        ",
+                              "Russia          ",
+                              "Dacha           ",
                               "Avtoradio       ",
-                              "Радио 100       ",
+                              "Radio 100       ",
                               "Kontinental     ",
-                              "Bisness FM      ",
+                              "Bisiness FM     ",
                               "Yumor FM        ",
                               "Europa+         ",
-                              "Novoe           ",
-                              "Studio          ",
+                              "NOVOE           ",
+                              "STUDIO 21       ",
                               "Intervolna      ",
-                              "Наше радио      ",
-                              "Русское радио   ",
-                              "Olimp           ",
-                              "L-radio         ",
-                              "7 na 7 xolmax   ",
+                              "NASHE RADIO     ",
+                              "Russkoe Radio   ",
+                              "Radio Olimp     ",
+                              "L-RADIO         ",
+                              "Radio 7         ",
+                              "SHanson         ",
                               "Dorognoe        ",
-                              "Iskatel         ",
+                              "Vania           ",
                               "DFM             ",
-                              "Comedy          "
+                              "Comedi          "
                         
                         };
 
@@ -212,6 +235,8 @@ void setup() {
   if (DEBUG_INIT){
     Serial.print("EEPROM.read(0);     ---- i= ");
     Serial.println(SET_STATION);
+    Serial.print("PROGRAMS LABEL;             ");
+    Serial.println(PROGRAMMS_LABEL[SET_STATION]);
 
     Serial.println("RDA5807.setup(); RDA5807 ------ OK");
     delay(1000);
@@ -251,12 +276,17 @@ void BUTTON()
   //Serial.println(KEY_1_count);
   if(ANTIBOUNCE(KEY_1, KEY_1_count))      //Функция возврвщает true если кнопка нажата
       {
-        rx.setFrequency(PROGRAMMS[++SET_STATION]);   // set STATION Freq.
+        if (SET_STATION<29){
+          rx.setFrequency(PROGRAMMS[++SET_STATION]);   // set STATION Freq.
+        }
       }
 
   if(ANTIBOUNCE(KEY_2, KEY_2_count)==true)      //Функция возврвщает true если кнопка нажата
       {
-        rx.setFrequency(PROGRAMMS[--SET_STATION]);   // set STATION Freq.
+        if (SET_STATION>0){
+          rx.setFrequency(PROGRAMMS[--SET_STATION]);   // set STATION Freq.
+        }
+        
       }
   if(ANTIBOUNCE(KEY_SET, KEY_SET_count)==true)  //Функция возврвщает true если кнопка нажата
     {
@@ -268,7 +298,7 @@ void BUTTON()
       lcd.print(SET_STATION);
       Serial.println("EEPROM SET: ");
       Serial.print(SET_STATION);
-      //delay(2000);
+      delay(5000);
     }
     
 
@@ -393,7 +423,7 @@ void showStatus_on_lcd()
     Serial.print("RSSI: ");
     Serial.println(rx.getRssi());
     Serial.print("LABEL: ");
-    Serial.println(PROGRAMMS_LABEL[SET_STATION]);
+    Serial.println(PROGRAMMS_LABEL[8]);
     //Serial.println(ANTIBOUNCE(KEY_1, KEY_1_count));
     //delay(1000);
     
