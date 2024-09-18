@@ -86,7 +86,18 @@ uint16_t PROGRAMMS[] = {
                         
                         };
 
-char* PROGRAMMS_LABEL[] = {   "Monte Carlo     ",
+/*
+  char *s = "text";  до / C++11 /
+  const char *s = "text";  начиная / C++11 /
+  Объявление указателя s типа char * и присваивание ему указателя на первый элемент строкового литерала "text". Попытка изменить этот строковой литерал (s[0] = 'a', например), — это неопределенное поведение.
+
+  Однако сам указатель переприсваивать можно:
+
+  const char *p = "text";  / OK /
+  p = "another text";      / OK /
+  Начиная с C++11 строковые литералы могут быть прямо присвоены только const char * (т. е. только указателям на константный char).
+*/
+const char* PROGRAMMS_LABEL[] = {   "Monte Carlo     ",
                               "Vesti FM        ",
                               "Radio Gordost   ",
                               "Mayak           ",
@@ -116,7 +127,6 @@ char* PROGRAMMS_LABEL[] = {   "Monte Carlo     ",
                               "Vania           ",
                               "DFM             ",
                               "Comedi          "
-                        
                         };
 
 unsigned char SET_STATION = EEPROM.read(0); //Считываем какую станцию сохранили.
@@ -193,10 +203,6 @@ void setup() {
   digitalWrite(KEY_2, HIGH);   //Включаем подтяжку к +5В
   digitalWrite(KEY_SET, HIGH); //Включаем подтяжку к +5В
 
-  if (DEBUG_INIT){
-    Serial.println("Serial.begin(9600); ------ OK");
-    delay(1000);
-  }
   //--------------------------------------------------------
   
   //--------------------------------------------------------
@@ -205,10 +211,12 @@ void setup() {
   lcd.begin(16,2);                  // initialize the lcd 
       
   if (DEBUG_INIT){
+    Serial.println("DEBUG INIT ON");
+    Serial.println("Serial.begin(9600); ------ OK");
     lcd.createChar (0, smiley);       // load character to the LCD
     lcd.createChar (1, armsUp);       // load character to the LCD
     lcd.createChar (2, frownie);      // load character to the LCD
-    delay(2000);
+    delay(5000);
     lcd.home ();                      // go home
     lcd.print("Hello,   RDA5807");  
     lcd.setCursor ( 0, 1 );           // go to the next line
@@ -274,7 +282,7 @@ void BUTTON()
 {
   //Serial.print("KEY_1_count: ");
   //Serial.println(KEY_1_count);
-  if(ANTIBOUNCE(KEY_1, KEY_1_count))      //Функция возврвщает true если кнопка нажата
+  if(ANTIBOUNCE(KEY_1, KEY_1_count))      //Функция возврвщает true если кнопка нажата 
       {
         if (SET_STATION<29){
           rx.setFrequency(PROGRAMMS[++SET_STATION]);   // set STATION Freq.
