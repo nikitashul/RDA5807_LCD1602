@@ -129,7 +129,10 @@ const char* PROGRAMMS_LABEL[] = {   "Monte Carlo     ",
                               "Comedi          "
                         };
 
+
 unsigned char SET_STATION = EEPROM.read(0); //Считываем какую станцию сохранили.
+//unsigned char SET_STATION = 14; //Считываем какую станцию сохранили.
+
 
 //LiquidCrystal lcd(12, 11, 5, 4, 3, 2, BACKLIGHT_PIN, POSITIVE );
 LiquidCrystal lcd(RS, EN, D0, D1, D2, D3); //(rs, enable, d0, d1, d2, d3)
@@ -190,7 +193,7 @@ bool ANTIBOUNCE(uint8_t KEY, uint8_t &COUNT);        //Функция антид
 
 void setup() {
   //Очистка памяти при первом программировании
-  //EEPROM.write(0, 0);
+  //EEPROM.write(0, 14);
   //--------------------------------------------------------
   //-------------------------USART--------------------------
   //--------------------------------------------------------
